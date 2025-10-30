@@ -1,11 +1,11 @@
 import { Image, Text, TouchableOpacity, View, ViewBase } from "react-native";
-import Icon from 'react-native-vector-icons/MaterialIcons';
-
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { RecipeCardStyle } from "../styles/recipeCard.style";
 
 interface RecipeCardProps {
   title: string;
   time: string | number;
-  preference: number,
+  preference: number;
   imageUrl?: string;
   onPress?: () => void;
   onLike?: () => void;
@@ -17,6 +17,7 @@ interface RecipeCardProps {
 const RecipeCard: React.FC<RecipeCardProps> = ({
   title,
   time,
+  preference,
   imageUrl,
   onPress,
   onLike,
@@ -25,27 +26,31 @@ const RecipeCard: React.FC<RecipeCardProps> = ({
   hateVisible,
 }) => {
   return (
-    <TouchableOpacity onPress={onPress}>
-      {imageUrl && <Image source={{ uri: imageUrl }} />}
-      <View>
-        <Text>{title}</Text>
-        <Text>{time} min</Text>
-        <View>
+    <TouchableOpacity onPress={onPress} style={RecipeCardStyle.card}>
+      {imageUrl && (
+        <Image source={{ uri: imageUrl }} style={RecipeCardStyle.image} />
+      )}
+      <View style={RecipeCardStyle.content}>
+        <View style={RecipeCardStyle.textContainer}>
+          <Text style={RecipeCardStyle.title}>{title}</Text>
+          <Text style={RecipeCardStyle.time}>{time} min</Text>
+        </View>
+        <View style={RecipeCardStyle.buttons}>
           {likeVisible && (
-            <TouchableOpacity onPress={onLike}>
-              <Icon
-                name="heart"
-                size={30}
-                color="green"
+            <TouchableOpacity onPress={onLike} style={RecipeCardStyle.button}>
+              <Ionicons
+                name={preference > 0 ? "heart" : "heart-outline"}
+                size={28}
+                color="#7b55ed"
               />
             </TouchableOpacity>
           )}
           {hateVisible && (
-            <TouchableOpacity onPress={onLike}>
-              <Icon
-                name="thumb-down"
-                size={30}
-                color="green"
+            <TouchableOpacity onPress={onHate} style={RecipeCardStyle.button}>
+              <Ionicons
+                name={preference < 0 ? "thumbs-down" : "thumbs-down-outline"}
+                size={28}
+                color="#7b55ed"
               />
             </TouchableOpacity>
           )}

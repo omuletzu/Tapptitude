@@ -5,34 +5,29 @@ import LoginScreen from "./src/screens/login";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import RegisterScreen from "./src/screens/register";
 import RecipeListScreen from "./src/screens/recipeList";
-import RecipeDetailsScreen from "./src/screens/recipeDetails";
 import RecipesLikedScreen from "./src/screens/recipedLiked";
 import RecipesHatedScreen from "./src/screens/recipesHated";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
-    <GestureHandlerRootView>
-      <NavigationContainer>
-        <Stack.Navigator initialRouteName="Login">
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="Register" component={RegisterScreen} />
-          <Stack.Screen name="RecipeList" component={RecipeListScreen} />
-          <Stack.Screen name="RecipeDetails" component={RecipeDetailsScreen} />
-          <Stack.Screen name="RecipesLiked" component={RecipesLikedScreen} />
-          <Stack.Screen name="RecipesHated" component={RecipesHatedScreen} />
-        </Stack.Navigator>
-      </NavigationContainer>
-    </GestureHandlerRootView>
+    <SafeAreaProvider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <NavigationContainer>
+          <Stack.Navigator
+            initialRouteName="Login"
+            screenOptions={{ headerShown: false }}
+          >
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Register" component={RegisterScreen} />
+            <Stack.Screen name="RecipeList" component={RecipeListScreen} />
+            <Stack.Screen name="RecipesLiked" component={RecipesLikedScreen} />
+            <Stack.Screen name="RecipesHated" component={RecipesHatedScreen} />
+          </Stack.Navigator>
+        </NavigationContainer>
+      </GestureHandlerRootView>
+    </SafeAreaProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});

@@ -68,7 +68,7 @@ export async function handlePreferenceRecipeDB(
     const { count } = await supabase
       .from("user_recipe_preference")
       .select("*", { count: "exact", head: true })
-      .eq("recipe_id", recipe.id);
+      .eq("recipe_id", recipe.id)
 
     if (count === 0) {
       const { error: error } = await supabase
@@ -100,7 +100,7 @@ export async function handlePreferenceRecipeDB(
       title: recipe.title,
       time: recipe.time,
       image_url: null,
-      full_recipe: JSON.stringify(recipe),
+      full_recipe: JSON.stringify(recipe)
     },
   ]);
 
@@ -171,7 +171,7 @@ export async function fetchRecipesBE(prompt: string) {
   const hatedIngredients = await fetchIngredients(userId!, -1);
 
   const response = await fetch(
-    `http://localhost:5000/recipes?prompt=${encodeURIComponent(
+    `http://10.93.118.188:5000/recipes?prompt=${encodeURIComponent(
       prompt
     )}&likedIngredients=${encodeURIComponent(
       JSON.stringify(likedIngredients)
@@ -183,5 +183,6 @@ export async function fetchRecipesBE(prompt: string) {
   }
 
   const data = await response.json();
+
   return data.recipes;
 }

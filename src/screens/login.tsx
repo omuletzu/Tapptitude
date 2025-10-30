@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { View } from "react-native";
+import { Text, View } from "react-native";
 import { supabase } from "../api/supabaseClient";
 import InputField from "../components/inputField";
 import Button from "../components/button";
 import ErrorText from "../components/errorText";
-import { LoginStyle } from "../styles/login.style";
+import { AuthStyle } from "../styles/auth.style";
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState("");
@@ -41,24 +41,41 @@ export default function LoginScreen({ navigation }: any) {
   };
 
   return (
-    <View>
-      <InputField placeHolder="Email" value={email} onChangeText={setEmail} />
+    <View style={AuthStyle.container}>
+      <View style={AuthStyle.card}>
+        <Text style={AuthStyle.title}> Login </Text>
 
-      <InputField
-        placeHolder="Password"
-        value={password}
-        onChangeText={setPassword}
-      />
+        <View style={AuthStyle.inputWrapper}>
+          <InputField
+            placeHolder="Email"
+            value={email}
+            onChangeText={setEmail}
+          />
+        </View>
 
-      {error ? <ErrorText message={error} /> : null}
+        <View style={AuthStyle.inputWrapper}>
+          <InputField
+            placeHolder="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={true}
+          />
+        </View>
 
-      <Button title="Login" onPress={handleLogin} disabled={disabledBtn} />
+        {error ? <Text style={AuthStyle.errorText}> {error} </Text> : null}
 
-      <Button
-        title="Create an account"
-        onPress={handleSwitchPages}
-        disabled={false}
-      />
+        <View style={AuthStyle.buttonWrapper}>
+          <Button title="Login" onPress={handleLogin} disabled={disabledBtn} />
+        </View>
+
+        <View style={AuthStyle.secondaryButton}>
+          <Button
+            title="Create an account"
+            onPress={handleSwitchPages}
+            disabled={false}
+          />
+        </View>
+      </View>
     </View>
   );
 }

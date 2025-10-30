@@ -4,6 +4,7 @@ import { supabase } from "../api/supabaseClient";
 import InputField from "../components/inputField";
 import ErrorText from "../components/errorText";
 import Button from "../components/button";
+import { AuthStyle } from "../styles/auth.style";
 
 export default function RegisterScreen({ navigation }: any) {
   const [email, setEmail] = useState("");
@@ -72,34 +73,50 @@ export default function RegisterScreen({ navigation }: any) {
   };
 
   return (
-    <View>
-      <InputField placeHolder="Email" value={email} onChangeText={setEmail} />
+    <View style={AuthStyle.container}>
+      <View style={AuthStyle.card}>
+        <Text style={AuthStyle.title}> Register </Text>
 
-      <InputField
-        placeHolder="Password"
-        value={password}
-        onChangeText={setPassword}
-      />
+        <View style={AuthStyle.inputWrapper}>
+          <InputField
+            placeHolder="Email"
+            value={email}
+            onChangeText={setEmail}
+          />
+        </View>
 
-      <InputField
-        placeHolder="Confirm password"
-        value={confirmPassword}
-        onChangeText={setConfirmPassword}
-      />
+        <View style={AuthStyle.inputWrapper}>
+          <InputField
+            placeHolder="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={true}
+          />
+        </View>
 
-      {error ? <ErrorText message={error} /> : null}
+        <View style={AuthStyle.inputWrapper}>
+          <InputField
+            placeHolder="Confirm password"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            secureTextEntry={true}
+          />
+        </View>
 
-      <Button
-        title="Register"
-        onPress={handleRegister}
-        disabled={disabledBtn}
-      />
+        {error ? <Text style={AuthStyle.errorText}> {error} </Text> : null}
 
-      <Button
-        title="Already having an account?"
-        onPress={handleSwitchPages}
-        disabled={false}
-      />
+        <View style={AuthStyle.buttonWrapper}>
+          <Button title="Register" onPress={handleRegister} disabled={disabledBtn} />
+        </View>
+
+        <View style={AuthStyle.secondaryButton}>
+          <Button
+            title="Already having an account?"
+            onPress={handleSwitchPages}
+            disabled={false}
+          />
+        </View>
+      </View>
     </View>
   );
 }

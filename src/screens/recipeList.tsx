@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { FlatList, View } from "react-native";
+import { ActivityIndicator, FlatList, Text, View } from "react-native";
 import RecipeCard from "../components/recipeCard";
 import Button from "../components/button";
 import SearchBar from "../components/searchBar";
@@ -8,36 +8,55 @@ import {
   fetchRecipesBE,
   handlePreferenceRecipeDB,
 } from "../services/recipeService";
+import { RecipeStyle } from "../styles/recipe.style";
+import { SafeAreaView } from "react-native-safe-area-context";
+import "react-native-get-random-values";
+import { v4 as uuidv4 } from "uuid";
+import { RecipeModalDetails } from "../components/recipeDetailsModal";
 
 export interface RecipeCardItem {
-  id: number;
+  id: string;
   title: string;
   time: number;
   ingredients: string[];
   instructions: string;
-  preference: number
+  preference: number;
 }
 
 export default function RecipeListScreen({ navigation }: any) {
   const [recipes, setRecipes] = useState<RecipeCardItem[]>([]);
-  const [lastPrompt, setLastPrompt] = useState("");
+  const [currentRecipeDetails, setCurrentRecipeDetails] =
+    useState<RecipeCardItem>();
+  const [modalVisible, setModalVisible] = useState(false);
+  const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handlePress = (recipeId: number) => {
-    navigation.navigate("RecipeList", { id: recipeId });
+  const onTextChange = (text: string) => {
+    setPrompt(text);
+  };
+
+  const navigateTo = (page: string) => {
+    navigation.navigate(page);
+  };
+
+  const handlePress = (recipe: RecipeCardItem) => {
+    setCurrentRecipeDetails(recipe);
+    setModalVisible(true);
   };
 
   const handleLike = async (recipe: RecipeCardItem) => {
     setLoading(true);
 
-    if(recipe.preference === 1) {
-      recipe.preference = 0;
-    }
-    else {
-      recipe.preference = 1;
-    }
+    const updatedRecipe = recipe;
+    updatedRecipe.preference = recipe.preference === 1 ? 0 : 1;
 
-    await handlePreferenceRecipeDB(recipe);
+    setRecipes((recipes) =>
+      recipes
+        .filter((r) => r.id !== undefined)
+        .map((r) => (r.id === recipe.id ? updatedRecipe : r))
+    );
+
+    await handlePreferenceRecipeDB(updatedRecipe);
 
     setLoading(false);
   };
@@ -45,12 +64,13 @@ export default function RecipeListScreen({ navigation }: any) {
   const handleHate = async (recipe: RecipeCardItem) => {
     setLoading(true);
 
-    if(recipe.preference === -1) {
-      recipe.preference = 0;
-    }
-    else {
-      recipe.preference = -1;
-    }
+    setRecipes((recipes) =>
+      recipes.map((r) =>
+        r.id === recipe.id
+          ? { ...r, preference: r.preference === -1 ? 0 : -1 }
+          : r
+      )
+    );
 
     await handlePreferenceRecipeDB(recipe);
 
@@ -58,13 +78,19 @@ export default function RecipeListScreen({ navigation }: any) {
   };
 
   const handleFetchRecipes = async (prompt: string) => {
-    setLoading(true);
+    if (loading || prompt.length === 0) {
+      return;
+    }
 
-    setLastPrompt(prompt);
+    setLoading(true);
 
     try {
       const response = await fetchRecipesBE(prompt);
-      const newRecipesList = response.recipes || [];
+      const newRecipesList = (response || []).map((r: RecipeCardItem) => ({
+        ...r,
+        preference: 0,
+        id: uuidv4(),
+      }));
 
       setRecipes(newRecipesList);
     } catch (err) {
@@ -75,6 +101,11 @@ export default function RecipeListScreen({ navigation }: any) {
     }
   };
 
+  const onCloseModalCallback = () => {
+    setModalVisible(false);
+    setCurrentRecipeDetails(undefined);
+  };
+
   useFocusEffect(
     useCallback(() => {
       return () => {};
@@ -82,34 +113,75 @@ export default function RecipeListScreen({ navigation }: any) {
   );
 
   return (
-    <View>
-      <SearchBar
-        placeholder="What do you feel like eating?"
-        onPress={handleFetchRecipes}
-      />
+    <SafeAreaView style={{ flex: 1 }}>
+      {currentRecipeDetails && (
+        <RecipeModalDetails
+          recipe={currentRecipeDetails}
+          visible={modalVisible}
+          onClose={onCloseModalCallback}
+          onLike={handleLike}
+        ></RecipeModalDetails>
+      )}
 
-      <FlatList
-        data={recipes}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
-          <RecipeCard
-            title={item.title}
-            time={item.time}
-            preference={item.preference}
-            onPress={() => handlePress(item.id)}
-            onLike={() => handleLike(item)}
-            onHate={() => handleHate(item)}
-            likeVisible={true}
-            hateVisible={true}
+      <View style={RecipeStyle.buttonsRow}>
+        <Button
+          title="Favourites"
+          onPress={() => navigateTo("RecipesLiked")}
+          disabled={false}
+        />
+
+        <Button
+          title="Hated"
+          onPress={() => navigateTo("RecipesHated")}
+          disabled={false}
+        />
+      </View>
+
+      <View style={RecipeStyle.container}>
+        <View style={RecipeStyle.searchWrapper}>
+          <SearchBar
+            placeholder="What do you feel like eating?"
+            onPress={handleFetchRecipes}
+            onTextChange={onTextChange}
+          />
+        </View>
+
+        {loading ? (
+          <ActivityIndicator
+            size="large"
+            color="#FF6347"
+            style={{ marginTop: 20 }}
+          />
+        ) : recipes.length === 0 ? (
+          <Text style={RecipeStyle.title}> Try generating some recipes </Text>
+        ) : (
+          <FlatList
+            style={RecipeStyle.list}
+            data={recipes}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <RecipeCard
+                title={item.title}
+                time={item.time}
+                preference={item.preference}
+                onPress={() => handlePress(item)}
+                onLike={() => handleLike(item)}
+                onHate={() => handleHate(item)}
+                likeVisible={true}
+                hateVisible={true}
+              />
+            )}
           />
         )}
-      />
 
-      <Button
-        title="I don't like these"
-        onPress={() => handleFetchRecipes(lastPrompt)}
-        disabled={prompt.length > 0}
-      />
-    </View>
+        <View style={RecipeStyle.buttonWrapper}>
+          <Button
+            title="I don't like these"
+            onPress={() => handleFetchRecipes(prompt)}
+            disabled={prompt.length === 0 || loading}
+          />
+        </View>
+      </View>
+    </SafeAreaView>
   );
 }
