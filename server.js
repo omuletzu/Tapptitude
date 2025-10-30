@@ -9,7 +9,11 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-const redis = new Redis(process.env.REDIS_URL);
+const redis = new Redis({
+  host: process.env.REDIS_HOST,
+  port: process.env.REDIS_PORT
+});
+
 const OLLAMA_BASE = `http://${process.env.OLLAMA_HOST}:${process.env.OLLAMA_PORT}/api`;
 
 async function getEmbedding(prompt) {
@@ -56,6 +60,9 @@ app.post("/embeddings", async (req, res) => {
 });
 
 function sortRecipes(recipes, liked, hated) {
+  liked = Array.isArray(liked) ? liked : [];
+  hated = Array.isArray(hated) ? hated : [];
+
   return recipes.sort((a, b) => {
     const aLiked = liked.filter((x) => a.ingredients.includes(x)).length;
     const bLiked = liked.filter((x) => b.ingredients.includes(x)).length;
