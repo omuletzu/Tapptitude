@@ -46,7 +46,7 @@ and generations (from llama3.2 model) via Ollama REST, uses Redis-Stack + RediSe
 - Supabase (Postgres + Auth):
   - Manages user accounts (Supabase Auth) and stores user-specific data: favorites, liked/hated relations, ingredient preferences, and optionally recipes (if client liked / hates them).
  
-## Request lifecycle
+## Request Lifecycle
 
 1. Client: POST /api/recipes/generate with { prompt }
 2. Backend: Call Ollama embeddings endpoint (mxbai-embed-large) to compute the input embedding (1024-dim float32).
@@ -57,3 +57,65 @@ and generations (from llama3.2 model) via Ollama REST, uses Redis-Stack + RediSe
    - Select top cached recipes across matched prompts until you reach 2 cached recipes (max).
 5. Backend: If cached recipes < 2, call the LLM (Llama 3.2) to generate structured recipes until total = 5 (i.e., typical: 2 cached + 3 generated).
    - When generating, inject user ingredient preferences into the generation prompt to bias results (e.g., `likedIngredients = ['garlic', 'basil'], hatedIngredients = ['shellfish'].`).
+   - Each generated recipe contains:
+      - `title` -> the name of the recipe
+      - `time` -> estimated cooking/prep time in minutes
+      - `ingredients` -> array of ingredient objects
+      - `instructions` -> step-by-step cooking instructions
+6. Backend: Append the newly generated recipes into the current prompt hash in Redis for future use.
+7. Backend: Return consolidated list of 5 recipes to client.
+8. Client: Displays 5 recipes; user can like / hate any.
+9. Client: When liking / hating requests are sent to supabase, to create / delete the recipe, and modify relations based on user's action.
+
+## Data Model
+
+- users:
+  - `id` -> UUID
+  - `email` -> TEXT
+  - `created_at` -> TIMESTAMP
+
+- recipes:
+  - `id` -> UUID
+  - `title` -> VARCHAR
+  - `time` -> INT
+  - `image_url` -> TEXT
+  - `full_recipe` -> TEXT
+  - `likes` -> INT
+  - `created_at` -> TIMESTAMP
+
+- ingredients:
+  - `id` -> UUID
+  - `name` -> TEXT
+  - `count` -> INT
+
+- recipe_ingredients:
+  - `recipe_id` -> UUID
+  - `ingredient_id` -> UUID
+
+- user_recipe_preference:
+  - `user_id` -> UUID
+  - `recipe_id` -> UUID
+  - `preference` -> SMALLINT
+  - `updated_at` -> TIMESTAMP
+ 
+## Running Locally / Quickstart
+
+To run the app locally, you need Redis Stack, Ollama, and the Node.js backend running. The recommended order is:
+
+- Redis-Stack:
+```bash
+docker run -d --name redis-stack -p 6379:6379 redis/redis-stack:latest
+```
+
+- Ollama Server:
+```
+ollama pull mxbai-embed-large
+ollama pull llama3.2
+ollama serve
+```
+
+- Node.js Server:
+```
+npm install
+npm start
+```
