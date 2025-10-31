@@ -10,6 +10,16 @@
   <img src="https://img.shields.io/badge/LLM-Llama_3.2-lightgrey" />
 </p>
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Screen recording / Screenshots](#screen-recording--screenshots)
+- [System architecture](#system-architecture)
+- [Components](#components)
+- [Request Lifecycle](#request-lifecycle)
+- [Data Model](#data-model)
+- [Running Locally / Quickstart](#running-locally--quickstart)
+
 ## Overview
 
 A mobile app that generates recipes using AI based on user preferences.
@@ -17,6 +27,22 @@ A mobile app that generates recipes using AI based on user preferences.
 Users can sign up, enter a prompt and receive 5 tailored recipes - combining AI-generated recipes with cached recipe retrieval from other users using vector similarity search in Redis-Stack.
 
 The system adapts based on liked or disliked recipes, so it knows for the current user his preffered or hated ingredients and uses them to improve future recipe suggestions.
+
+## Screen recording / Screenshots
+
+https://github.com/user-attachments/assets/368ea5ab-7a62-4ac3-86d9-250a32b2062e
+
+<img src="https://github.com/user-attachments/assets/a97c3853-c22c-40d0-9c24-1e84b17eded1" alt="ss1" width="200"/>
+<img src="https://github.com/user-attachments/assets/fc15299c-c400-4200-a80c-9f1af5d3394a" alt="ss2" width="200"/>
+<img src="https://github.com/user-attachments/assets/56624b16-4977-4b56-80fd-a9b5cc624556" alt="ss3" width="200"/>
+<img src="https://github.com/user-attachments/assets/557bebaf-d7e1-4311-9739-d3c3604a2624" alt="ss11" width="200"/>
+<img src="https://github.com/user-attachments/assets/2f7a58bf-0c61-4988-80da-ccbd30ab852c" alt="ss4" width="200"/>
+<img src="https://github.com/user-attachments/assets/832c5f2e-9686-4fc4-9dcd-99e760531b32" alt="ss5" width="200"/>
+<img src="https://github.com/user-attachments/assets/7becbef1-bfe8-487e-a089-7f8074a9ca6d" alt="ss6" width="200"/>
+<img src="https://github.com/user-attachments/assets/2be03df4-0568-4adc-8f61-f66ecdf6e813" alt="ss7" width="200"/>
+<img src="https://github.com/user-attachments/assets/f7d86e48-f758-4da6-a907-3c7d884e506a" alt="ss8" width="200"/>
+<img src="https://github.com/user-attachments/assets/98163cb3-c39f-42d7-b514-837983b63d37" alt="ss9" width="200"/>
+<img src="https://github.com/user-attachments/assets/585c09aa-af03-498a-90ec-8f0f9f51ffd6" alt="ss10" width="200"/>
 
 ## System architecture
 
@@ -45,20 +71,6 @@ and generations (from llama3.2 model) via Ollama REST, uses Redis-Stack + RediSe
   - llama3.2 for recipe generation.
 - Supabase (Postgres + Auth):
   - Manages user accounts (Supabase Auth) and stores user-specific data: favorites, liked/hated relations, ingredient preferences, and optionally recipes (if client liked / hates them).
-
-## Screenshots
-
-<img src="https://github.com/user-attachments/assets/a97c3853-c22c-40d0-9c24-1e84b17eded1" alt="ss1" width="200"/>
-<img src="https://github.com/user-attachments/assets/fc15299c-c400-4200-a80c-9f1af5d3394a" alt="ss2" width="200"/>
-<img src="https://github.com/user-attachments/assets/56624b16-4977-4b56-80fd-a9b5cc624556" alt="ss3" width="200"/>
-<img src="https://github.com/user-attachments/assets/557bebaf-d7e1-4311-9739-d3c3604a2624" alt="ss11" width="200"/>
-<img src="https://github.com/user-attachments/assets/2f7a58bf-0c61-4988-80da-ccbd30ab852c" alt="ss4" width="200"/>
-<img src="https://github.com/user-attachments/assets/832c5f2e-9686-4fc4-9dcd-99e760531b32" alt="ss5" width="200"/>
-<img src="https://github.com/user-attachments/assets/7becbef1-bfe8-487e-a089-7f8074a9ca6d" alt="ss6" width="200"/>
-<img src="https://github.com/user-attachments/assets/2be03df4-0568-4adc-8f61-f66ecdf6e813" alt="ss7" width="200"/>
-<img src="https://github.com/user-attachments/assets/f7d86e48-f758-4da6-a907-3c7d884e506a" alt="ss8" width="200"/>
-<img src="https://github.com/user-attachments/assets/98163cb3-c39f-42d7-b514-837983b63d37" alt="ss9" width="200"/>
-<img src="https://github.com/user-attachments/assets/585c09aa-af03-498a-90ec-8f0f9f51ffd6" alt="ss10" width="200"/>
  
 ## Request Lifecycle
 
