@@ -74,7 +74,7 @@ and generations (from llama3.2 model) via Ollama REST, uses Redis-Stack + RediSe
  
 ## Request Lifecycle
 
-1. Client: POST /api/recipes/generate with { prompt }
+1. Client: POST /api/recipes with { prompt }
 2. Backend: Call Ollama embeddings endpoint (mxbai-embed-large) to compute the input embedding (1024-dim float32).
 3. Backend: Query Redis vector index for top prompts nearest to the input embedding (KNN).
  <br> Index used `FT.CREATE idx:prompts ON HASH PREFIX 1 "prompt:" SCHEMA text TEXT embedding VECTOR HNSW 6 TYPE FLOAT32 DIM 1024 DISTANCE_METRIC COSINE`
