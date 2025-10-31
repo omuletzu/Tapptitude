@@ -9,10 +9,24 @@ import {
 import { RecipeStyle } from "../styles/recipe.style";
 import { useFocusEffect } from "@react-navigation/native";
 import { ActivityIndicator } from "react-native";
+import { RecipeModalDetails } from "../components/recipeDetailsModal";
 
 export default function RecipesHatedScreen({ navigation }: any) {
   const [hatedRecipes, setHatedRecipes] = useState<RecipeCardItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [currentRecipeDetails, setCurrentRecipeDetails] =
+    useState<RecipeCardItem>();
+  const [modalVisible, setModalVisible] = useState(false);
+
+  const handlePress = (recipe: RecipeCardItem) => {
+    setCurrentRecipeDetails(recipe);
+    setModalVisible(true);
+  };
+
+  const onCloseModalCallback = () => {
+    setModalVisible(false);
+    setCurrentRecipeDetails(undefined);
+  };
 
   const handleRemoveHate = async (recipe: RecipeCardItem) => {
     recipe.preference = 0;
@@ -20,14 +34,29 @@ export default function RecipesHatedScreen({ navigation }: any) {
     setHatedRecipes((r) => r.filter((ri) => ri.id !== recipe.id));
   };
 
-  const loadLikedRecipes = async () => {
+  const loadHatedRecipes = async () => {
     setLoading(true);
 
     const recipes = await handleFetchRecipes(-1);
-    const preferenceUpdatedRecipes = recipes.map((r: RecipeCardItem) => ({
-      ...r,
-      preference: -1,
-    }));
+    const preferenceUpdatedRecipes = recipes.map((r: any) => {
+      let ingredients = [];
+      let instructions = "";
+
+      try {
+        const parsed = JSON.parse(r.full_recipe);
+        ingredients = parsed.ingredients || [];
+        instructions = parsed.instructions;
+      } catch (err) {
+        console.error("Cannot parse full recipe");
+      }
+
+      return {
+        ...r,
+        preference: -1,
+        ingredients: ingredients,
+        instructions: instructions,
+      };
+    });
     setHatedRecipes(preferenceUpdatedRecipes);
 
     setLoading(false);
@@ -35,12 +64,23 @@ export default function RecipesHatedScreen({ navigation }: any) {
 
   useFocusEffect(
     useCallback(() => {
-      loadLikedRecipes();
+      loadHatedRecipes();
     }, [])
   );
 
   return (
     <View style={RecipeStyle.container}>
+      {currentRecipeDetails && (
+        <RecipeModalDetails
+          recipe={currentRecipeDetails}
+          visible={modalVisible}
+          showLike={false}
+          closeModalAfterAction={true}
+          onClose={onCloseModalCallback}
+          onLike={handleRemoveHate}
+        ></RecipeModalDetails>
+      )}
+
       <Text style={RecipeStyle.title}> Hated:</Text>
 
       {loading ? (
@@ -64,6 +104,7 @@ export default function RecipesHatedScreen({ navigation }: any) {
               title={item.title}
               time={item.time}
               preference={item.preference}
+              onPress={() => handlePress(item)}
               onHate={() => handleRemoveHate(item)}
               likeVisible={false}
               hateVisible={true}

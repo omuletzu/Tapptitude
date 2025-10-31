@@ -42,9 +42,27 @@ async function fetchIngredients(userId: string, preference: number) {
   const ingredients: string[] = [];
 
   data?.forEach((userRecipe) => {
-    userRecipe.recipes?.forEach((recipe: any) => {
-      recipe.recipe_ingredients?.forEach((ri: any) => {
-        ri.ingredients?.forEach((ingredient: any) => {
+    const recipes = Array.isArray(userRecipe.recipes)
+      ? userRecipe.recipes
+      : userRecipe.recipes
+      ? [userRecipe.recipes]
+      : [];
+
+    recipes.forEach((recipe: any) => {
+      const recipeIngredients = Array.isArray(recipe.recipe_ingredients)
+        ? recipe.recipe_ingredients
+        : recipe.recipe_ingredients
+        ? [recipe.recipe_ingredients]
+        : [];
+
+      recipeIngredients.forEach((ri: any) => {
+        const ingr = Array.isArray(ri.ingredients)
+          ? ri.ingredients
+          : ri.ingredients
+          ? [ri.ingredients]
+          : [];
+
+        ingr.forEach((ingredient: any) => {
           ingredients.push(ingredient.name);
         });
       });
@@ -56,51 +74,95 @@ async function fetchIngredients(userId: string, preference: number) {
   return uniqueIngredients;
 }
 
-export async function handlePreferenceRecipeDB(
-  recipe: RecipeCardItem
-) {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const userId = user?.id;
+async function handleDeleteRecipeDB(userId: string, recipe: RecipeCardItem) {
+  const { count } = await supabase
+    .from("user_recipe_preference")
+    .select("*", { count: "exact", head: true })
+    .eq("recipe_id", recipe.id);
 
-  if (recipe.preference === 0) {
-    const { count } = await supabase
-      .from("user_recipe_preference")
-      .select("*", { count: "exact", head: true })
-      .eq("recipe_id", recipe.id)
-
-    if (count === 0) {
-      const { error: error } = await supabase
-        .from("recipes")
-        .delete()
-        .eq("id", recipe.id);
-
-      if (error) {
-        console.error(error.message);
-      }
-    }
-
-    const { error } = await supabase
-      .from("user_recipe_preference")
+  if (count === 0) {
+    const { error: error } = await supabase
+      .from("recipes")
       .delete()
-      .eq("user_id", userId)
-      .eq("recipe_id", recipe.id);
+      .eq("id", recipe.id);
 
     if (error) {
       console.error(error.message);
     }
-
-    return;
   }
 
+  const { error } = await supabase
+    .from("user_recipe_preference")
+    .delete()
+    .eq("user_id", userId)
+    .eq("recipe_id", recipe.id);
+
+  if (error) {
+    console.error(error.message);
+  }
+
+  const { data: riData, error: riErr } = await supabase
+    .from("recipe_ingredients")
+    .select("ingredient_id")
+    .eq("recipe_id", recipe.id);
+
+  if (riErr) {
+    console.error(riErr);
+  } else {
+    const ingredientIds = riData?.map((r: any) => r.ingredient_id) || [];
+
+    const { error: delRiErr } = await supabase
+      .from("recipe_ingredients")
+      .delete()
+      .eq("recipe_id", recipe.id);
+
+    if (delRiErr) {
+      console.error(delRiErr);
+    } else {
+      for (const ingredientId of ingredientIds) {
+        const { data: ingRows, error: ingErr } = await supabase
+          .from("ingredients")
+          .select("id,count")
+          .eq("id", ingredientId)
+          .maybeSingle();
+
+        if (ingErr) {
+          console.error("Failed to select ingredient", ingErr);
+          continue;
+        }
+        if (!ingRows) continue;
+
+        const currentCount = ingRows.count ?? 0;
+        const newCount = currentCount - 1;
+
+        if (newCount > 0) {
+          const { error: updErr } = await supabase
+            .from("ingredients")
+            .update({ count: newCount })
+            .eq("id", ingredientId);
+          if (updErr)
+            console.error("Failed to decrement ingredient count", updErr);
+        } else {
+          const { error: delIngErr } = await supabase
+            .from("ingredients")
+            .delete()
+            .eq("id", ingredientId);
+          if (delIngErr)
+            console.error("Failed to delete ingredient", delIngErr);
+        }
+      }
+    }
+  }
+}
+
+async function handleAddRecipeDB(userId: string, recipe: RecipeCardItem) {
   const { error: insertError } = await supabase.from("recipes").upsert([
     {
       id: recipe.id,
       title: recipe.title,
       time: recipe.time,
       image_url: null,
-      full_recipe: JSON.stringify(recipe)
+      full_recipe: JSON.stringify(recipe),
     },
   ]);
 
@@ -122,6 +184,88 @@ export async function handlePreferenceRecipeDB(
   if (error) {
     console.error(error.message);
   }
+
+  const ingredientIds: { name: string; id: string }[] = [];
+
+  for (const ingredient of recipe.ingredients) {
+    if (!ingredient) continue;
+
+    const { data: existing, error: selErr } = await supabase
+      .from("ingredients")
+      .select("id,count")
+      .eq("name", ingredient)
+      .maybeSingle();
+
+    if (selErr) {
+      console.error("Failed to select ingredient by name", selErr);
+      continue;
+    }
+
+    if (!existing) {
+      const { data: insData, error: insErr } = await supabase
+        .from("ingredients")
+        .insert([{ name: ingredient, count: 1 }])
+        .select("id")
+        .maybeSingle();
+
+      if (insErr) {
+        console.error("Failed to insert ingredient", insErr);
+        continue;
+      }
+
+      ingredientIds.push({ name: ingredient, id: insData!.id });
+    } else {
+      const newCount = (existing.count ?? 0) + 1;
+
+      const { error: updErr } = await supabase
+        .from("ingredients")
+        .update({ count: newCount })
+        .eq("id", existing.id);
+
+      if (updErr) {
+        console.error("Failed to update ingredient count", updErr);
+        continue;
+      }
+
+      ingredientIds.push({ name: ingredient, id: existing.id });
+    }
+
+    if (ingredientIds.length > 0) {
+      const recipeIngredientRows = ingredientIds.map((i) => ({
+        recipe_id: recipe.id,
+        ingredient_id: i.id,
+      }));
+
+      const { error: riUpErr } = await supabase
+        .from("recipe_ingredients")
+        .upsert(recipeIngredientRows, {
+          onConflict: "recipe_id,ingredient_id",
+        });
+
+      if (riUpErr)
+        console.error("Failed to upsert recipe_ingredients", riUpErr);
+    }
+  }
+}
+
+export async function handlePreferenceRecipeDB(recipe: RecipeCardItem) {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const userId = user?.id;
+
+  if (!userId) {
+    console.error("Undefined user id");
+    return;
+  }
+
+  if (recipe.preference === 0) {
+    await handleDeleteRecipeDB(userId, recipe);
+
+    return;
+  }
+
+  await handleAddRecipeDB(userId, recipe);
 }
 
 export async function handleFetchRecipes(preference: number) {

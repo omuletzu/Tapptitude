@@ -8,10 +8,24 @@ import {
 } from "../services/recipeService";
 import { RecipeStyle } from "../styles/recipe.style";
 import { useFocusEffect } from "@react-navigation/native";
+import { RecipeModalDetails } from "../components/recipeDetailsModal";
 
 export default function RecipesLikedScreen({ navigation }: any) {
   const [likedRecipes, setLikedRecipes] = useState<RecipeCardItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [currentRecipeDetails, setCurrentRecipeDetails] =
+    useState<RecipeCardItem>();
+  const [modalVisible, setModalVisible] = useState(false);
+
+  const handlePress = (recipe: RecipeCardItem) => {
+    setCurrentRecipeDetails(recipe);
+    setModalVisible(true);
+  };
+
+  const onCloseModalCallback = () => {
+    setModalVisible(false);
+    setCurrentRecipeDetails(undefined);
+  };
 
   const handleRemoveLike = async (recipe: RecipeCardItem) => {
     recipe.preference = 0;
@@ -23,10 +37,26 @@ export default function RecipesLikedScreen({ navigation }: any) {
     setLoading(true);
 
     const recipes = await handleFetchRecipes(1);
-    const preferenceUpdatedRecipes = recipes.map((r: RecipeCardItem) => ({
-      ...r,
-      preference: 1,
-    }));
+    const preferenceUpdatedRecipes = recipes.map((r: any) => {
+      let ingredients = []
+      let instructions = ""
+
+      try {
+        const parsed = JSON.parse(r.full_recipe)
+        ingredients = parsed.ingredients || [];
+        instructions = parsed.instructions;
+      }
+      catch(err) {
+        console.error("Cannot parse full recipe")
+      }
+
+      return {
+        ...r,
+        preference: 1,
+        ingredients: ingredients,
+        instructions: instructions
+      }
+    });
     setLikedRecipes(preferenceUpdatedRecipes);
 
     setLoading(false);
@@ -40,6 +70,17 @@ export default function RecipesLikedScreen({ navigation }: any) {
 
   return (
     <View style={RecipeStyle.container}>
+      {currentRecipeDetails && (
+        <RecipeModalDetails
+          recipe={currentRecipeDetails}
+          visible={modalVisible}
+          showLike={true}
+          closeModalAfterAction={true}
+          onClose={onCloseModalCallback}
+          onLike={handleRemoveLike}
+        ></RecipeModalDetails>
+      )}
+
       <Text style={RecipeStyle.title}> Favorites:</Text>
 
       {loading ? (
@@ -49,7 +90,10 @@ export default function RecipesLikedScreen({ navigation }: any) {
           style={{ marginTop: 20 }}
         />
       ) : likedRecipes.length === 0 ? (
-        <Text style={RecipeStyle.title}> No favorite recipes at the moment </Text>
+        <Text style={RecipeStyle.title}>
+          {" "}
+          No favorite recipes at the moment{" "}
+        </Text>
       ) : (
         <FlatList
           style={RecipeStyle.list}
@@ -60,6 +104,7 @@ export default function RecipesLikedScreen({ navigation }: any) {
               title={item.title}
               time={item.time}
               preference={item.preference}
+              onPress={() => handlePress(item)}
               onLike={() => handleRemoveLike(item)}
               likeVisible={true}
               hateVisible={false}

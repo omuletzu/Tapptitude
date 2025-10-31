@@ -6,8 +6,10 @@ import { RecipeModalStyle } from "../styles/recipeModal.style";
 import { RecipeCardStyle } from "../styles/recipeCard.style";
 
 interface RecipeModalDetailsProps {
-  recipe?: RecipeCardItem;
+  recipe: RecipeCardItem;
   visible: boolean;
+  showLike: boolean;
+  closeModalAfterAction: boolean;
   onClose: () => void;
   onLike: (recipe: RecipeCardItem) => void;
 }
@@ -15,6 +17,8 @@ interface RecipeModalDetailsProps {
 export const RecipeModalDetails: React.FC<RecipeModalDetailsProps> = ({
   recipe,
   visible,
+  showLike,
+  closeModalAfterAction,
   onClose,
   onLike,
 }) => {
@@ -47,16 +51,23 @@ export const RecipeModalDetails: React.FC<RecipeModalDetailsProps> = ({
               Duration: {recipe?.time} min
             </Text>
 
-            <TouchableOpacity
-              onPress={() => onLike(recipe!)}
-              style={RecipeCardStyle.button}
-            >
-              <Ionicons
-                name={recipe?.preference! > 0 ? "heart" : "heart-outline"}
-                size={28}
-                color="#7b55ed"
-              />
-            </TouchableOpacity>
+            {showLike && (
+              <TouchableOpacity
+                onPress={() => {
+                  onLike(recipe!);
+                  if (closeModalAfterAction) {
+                    onClose();
+                  }
+                }}
+                style={RecipeCardStyle.button}
+              >
+                <Ionicons
+                  name={recipe?.preference! > 0 ? "heart" : "heart-outline"}
+                  size={28}
+                  color="#7b55ed"
+                />
+              </TouchableOpacity>
+            )}
 
             <Text style={RecipeModalStyle.subTitle}>Ingredients</Text>
 

@@ -25,11 +25,13 @@ export interface RecipeCardItem {
 
 export default function RecipeListScreen({ navigation }: any) {
   const [recipes, setRecipes] = useState<RecipeCardItem[]>([]);
-  const [currentRecipeDetails, setCurrentRecipeDetails] =
-    useState<RecipeCardItem>();
+  const [currentRecipeId, setCurrentRecipeId] =
+    useState<string | undefined>();
   const [modalVisible, setModalVisible] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const currentRecipe = currentRecipeId ? recipes.find(r => r.id === currentRecipeId) : undefined;
 
   const onTextChange = (text: string) => {
     setPrompt(text);
@@ -39,24 +41,19 @@ export default function RecipeListScreen({ navigation }: any) {
     navigation.navigate(page);
   };
 
-  const handlePress = (recipe: RecipeCardItem) => {
-    setCurrentRecipeDetails(recipe);
+  const handlePress = (recipeId: string) => {
+    setCurrentRecipeId(recipeId);
     setModalVisible(true);
   };
 
   const handleLike = async (recipe: RecipeCardItem) => {
     setLoading(true);
 
-    const updatedRecipe = recipe;
-    updatedRecipe.preference = recipe.preference === 1 ? 0 : 1;
+    const updated = { ...recipe, preference: recipe.preference === 1 ? 0 : 1 };
 
-    setRecipes((recipes) =>
-      recipes
-        .filter((r) => r.id !== undefined)
-        .map((r) => (r.id === recipe.id ? updatedRecipe : r))
-    );
+    setRecipes(prev => prev.map(r => (r.id === updated.id ? updated : r)));
 
-    await handlePreferenceRecipeDB(updatedRecipe);
+    await handlePreferenceRecipeDB(updated);
 
     setLoading(false);
   };
@@ -64,15 +61,13 @@ export default function RecipeListScreen({ navigation }: any) {
   const handleHate = async (recipe: RecipeCardItem) => {
     setLoading(true);
 
-    setRecipes((recipes) =>
-      recipes.map((r) =>
-        r.id === recipe.id
-          ? { ...r, preference: r.preference === -1 ? 0 : -1 }
-          : r
-      )
-    );
+    const updated = { ...recipe, preference: recipe.preference === -1 ? 0 : -1 };
 
-    await handlePreferenceRecipeDB(recipe);
+    setRecipes(prev => prev.map(r => (r.id === updated.id ? updated : r)));
+
+    await handlePreferenceRecipeDB(updated);
+
+    await handlePreferenceRecipeDB(updated);
 
     setLoading(false);
   };
@@ -103,7 +98,7 @@ export default function RecipeListScreen({ navigation }: any) {
 
   const onCloseModalCallback = () => {
     setModalVisible(false);
-    setCurrentRecipeDetails(undefined);
+    setCurrentRecipeId(undefined);
   };
 
   useFocusEffect(
@@ -114,10 +109,12 @@ export default function RecipeListScreen({ navigation }: any) {
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      {currentRecipeDetails && (
+      {currentRecipeId && (
         <RecipeModalDetails
-          recipe={currentRecipeDetails}
+          recipe={currentRecipe!}
           visible={modalVisible}
+          showLike={true}
+          closeModalAfterAction={false}
           onClose={onCloseModalCallback}
           onLike={handleLike}
         ></RecipeModalDetails>
@@ -164,7 +161,7 @@ export default function RecipeListScreen({ navigation }: any) {
                 title={item.title}
                 time={item.time}
                 preference={item.preference}
-                onPress={() => handlePress(item)}
+                onPress={() => handlePress(item.id)}
                 onLike={() => handleLike(item)}
                 onHate={() => handleHate(item)}
                 likeVisible={true}
