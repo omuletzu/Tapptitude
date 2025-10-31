@@ -30,6 +30,8 @@ The system adapts based on liked or disliked recipes, so it knows for the curren
 
 ## Screen recording / Screenshots
 
+AI response sections are sped up — the model ran locally and real inference time is longer due to hardware limitations
+
 https://github.com/user-attachments/assets/368ea5ab-7a62-4ac3-86d9-250a32b2062e
 
 <img src="https://github.com/user-attachments/assets/a97c3853-c22c-40d0-9c24-1e84b17eded1" alt="ss1" width="200"/>
@@ -139,9 +141,15 @@ ollama pull mxbai-embed-large
 ollama pull llama3.2
 ollama serve
 ```
-
 - Node.js Server:
 ```
 npm install
 npm start
 ```
+
+## Future Improvements
+
+- Deploy the Node.js backend and move to a fully cloud-hosted infrastructure for faster inference
+- Container orchestration with Kubernetes for scalability, fault-tolerance, and easier deployments
+- Host the AI model in the cloud instead of running locally
+- Improve UI/UX
