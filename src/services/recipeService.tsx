@@ -315,7 +315,7 @@ export async function fetchRecipesBE(prompt: string) {
   const hatedIngredients = await fetchIngredients(userId!, -1);
 
   const response = await fetch(
-    `http://10.93.118.188:5000/recipes?prompt=${encodeURIComponent(
+    `http://${process.env.EXPO_PUBLIC_BE_HOST}:${process.env.EXPO_PUBLIC_BE_PORT}/recipes?prompt=${encodeURIComponent(
       prompt
     )}&likedIngredients=${encodeURIComponent(
       JSON.stringify(likedIngredients)
